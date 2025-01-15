@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Product List</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        function fetchProducts() {
+            $.ajax({
+                url: "/api/products/all",
+                method: "GET",
+                success: function (data) {
+                    let rows = '';
+                    data.forEach(function(product) {
+                        rows += `<tr>
+                                    <td>${product.name}</td>
+                                    <td>${product.sku}</td>
+                                    <td>${product.price}</td>
+                                    <td>${product.description}</td>
+                                    <td>
+                                        <button onclick="editProduct(${product.id})">Edit</button>
+                                        <button onclick="deleteProduct(${product.id})">Delete</button>
+                                    </td>
+                                  </tr>`;
+                    });
+                    $('#product-table tbody').html(rows);
+                }
+            });
+        }
+
+        function editProduct(id) {
+            $.ajax({
+                url: `/api/products/${id}`,
+                method: 'GET',
+                success: function (product) {
+                    $('#product-id').val(product.id);
+                    $('#product-name').val(product.name);
+                    $('#product-sku').val(product.sku);
+                    $('#product-price').val(product.price);
+                    $('#product-description').val(product.description);
+                }
+            });
+        }
+
+        function deleteProduct(id) {
+            $.ajax({
+                url: `/api/products/${id}`,
+                method: 'DELETE',
+                success: function () {
+                    fetchProducts();
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            fetchProducts();
+
+            $('#product-form').on('submit', function(e) {
+                e.preventDefault();
+                const product = {
+                    id: $('#product-id').val(),
+                    name: $('#product-name').val(),
+                    sku: $('#product-sku').val(),
+                    price: $('#product-price').val(),
+                    description: $('#product-description').val()
+                };
+                const method = product.id ? 'PUT' : 'POST';
+                const url = product.id ? `/api/products/${product.id}` : '/api/products';
+                $.ajax({
+                    url: url,
+                    method: method,
+                    contentType: 'application/json',
+                    data: JSON.stringify(product),
+                    success: function () {
+                        fetchProducts();
+                        $('#product-form')[0].reset();
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Product List</h1>
+    <button onclick="$('#product-form')[0].reset();">Add New Product</button>
+
+    <table id="product-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>SKU</th>
+                <th>Price</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Products will be populated here via AJAX -->
+        </tbody>
+    </table>
+
+    <h2>Product Form</h2>
+    <form id="product-form">
+        <input type="hidden" id="product-id">
+        <label>Name</label><br>
+        <input type="text" id="product-name" required><br><br>
+        <label>SKU</label><br>
+        <input type="text" id="product-sku" required><br><br>
+        <label>Price</label><br>
+        <input type="number" id="product-price" required><br><br>
+        <label>Description</label><br>
+        <textarea id="product-description" required></textarea><br><br>
+        <button type="submit">Save Product</button>
+    </form>
+</body>
+</html>
